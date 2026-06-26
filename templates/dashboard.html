@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}Дашборд{% endblock %}
+{% block page_header %}Дашборд{% endblock %}
+{% block content %}
+
+<!-- Stats cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-gradient-blue d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number"><span class="counter" data-target="{{ total_employees }}">0</span></div>
+                <div class="stat-label"><i class="bi bi-people me-1"></i>Сотрудников</div>
+            </div>
+            <i class="bi bi-people-fill stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-gradient-green d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number"><span class="counter" data-target="{{ total_tasks }}">0</span></div>
+                <div class="stat-label"><i class="bi bi-list-task me-1"></i>Всего задач</div>
+            </div>
+            <i class="bi bi-list-task stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-gradient-orange d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number"><span class="counter" data-target="{{ tasks_in_progress }}">0</span></div>
+                <div class="stat-label"><i class="bi bi-arrow-repeat me-1"></i>В работе</div>
+            </div>
+            <i class="bi bi-arrow-repeat stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card bg-gradient-purple d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number"><span class="counter" data-target="{{ tasks_completed }}">0</span></div>
+                <div class="stat-label"><i class="bi bi-check2-all me-1"></i>Выполнено</div>
+            </div>
+            <i class="bi bi-check2-all stat-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Progress and distribution -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-pie-chart me-2 text-primary"></i>Распределение задач</h6>
+            </div>
+            <div class="card-body">
+                {% with total=total_tasks %}
+                {% if total > 0 %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span><span class="badge bg-secondary" style="transform:none;">Создана</span></span>
+                        <span class="fw-medium">{{ tasks_created }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-secondary" style="width:{% widthratio tasks_created total 100 %}%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span><span class="badge bg-primary" style="transform:none;">В работе</span></span>
+                        <span class="fw-medium">{{ tasks_in_progress }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" style="width:{% widthratio tasks_in_progress total 100 %}%"></div>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span><span class="badge bg-success" style="transform:none;">Выполнена</span></span>
+                        <span class="fw-medium">{{ tasks_completed }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width:{% widthratio tasks_completed total 100 %}%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-bar-chart" style="font-size:2.5rem;"></i>
+                    <p class="mb-0 small">Нет данных</p>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>Последние задачи</h6>
+                <a href="{% url 'tasks:list' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-right me-1"></i>Все задачи
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for task in recent_tasks %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div class="min-w-0">
+                            <div class="fw-medium">{{ task.title }}</div>
+                            <small class="text-muted d-flex align-items-center gap-2 mt-1">
+                                <span><i class="bi bi-person me-1"></i>{{ task.employee.full_name }}</span>
+                                <span><i class="bi bi-calendar me-1"></i>{{ task.created_at|date:"d.m.Y H:i" }}</span>
+                            </small>
+                        </div>
+                        {% if task.status == 'created' %}
+                            <span class="badge bg-secondary"><i class="bi bi-file-earmark me-1"></i>Создана</span>
+                        {% elif task.status == 'in_progress' %}
+                            <span class="badge bg-primary"><i class="bi bi-arrow-repeat me-1"></i>В работе</span>
+                        {% else %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Выполнена</span>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p class="mb-2">Нет задач</p>
+                        <a href="{% url 'tasks:create' %}" class="btn btn-success btn-sm">
+                            <i class="bi bi-plus-lg"></i> Создать задачу
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent employees -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-person-plus me-2 text-success"></i>Последние сотрудники</h6>
+                <a href="{% url 'employees:list' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-right me-1"></i>Все сотрудники
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ФИО</th>
+                                <th>Должность</th>
+                                <th>Зарплата</th>
+                                <th>Дата приема</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in recent_employees %}
+                            <tr>
+                                <td class="fw-medium"><i class="bi bi-person-circle me-2 text-muted"></i>{{ emp.full_name }}</td>
+                                <td><span class="badge bg-light text-dark">{{ emp.position }}</span></td>
+                                <td class="fw-medium">{{ emp.salary }} ₽</td>
+                                <td>{{ emp.hire_date|date:"d.m.Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <i class="bi bi-people"></i>
+                                        <p class="mb-0">Нет сотрудников</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

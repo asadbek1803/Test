@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Work Manager{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary: #4f8cff;
+            --success: #2ed573;
+            --warning: #ff9f43;
+            --danger: #ff6b6b;
+        }
+        * { box-sizing: border-box; }
+
+        body {
+            background: #f4f6f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            opacity: 0;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes checkmark {
+            0% { stroke-dashoffset: 50; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        .wrapper { display: flex; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar-brand {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-brand h4 {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            animation: slideInLeft 0.4s ease;
+        }
+        .sidebar-brand small {
+            color: rgba(255,255,255,0.5);
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.65);
+            padding: 0.8rem 1.5rem;
+            font-size: 0.925rem;
+            transition: all 0.25s ease;
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: #fff;
+            background: rgba(255,255,255,0.06);
+            border-left-color: var(--primary);
+            padding-left: 1.8rem;
+        }
+        .sidebar .nav-link i {
+            width: 22px;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+        .sidebar .nav-link:hover i {
+            transform: scale(1.15);
+        }
+        .sidebar .nav-link::after {
+            content: '';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .sidebar .nav-link:hover::after {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            min-height: 100vh;
+        }
+        .no-auth .main-content {
+            margin-left: 0;
+        }
+
+        /* Topbar */
+        .topbar {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+        .topbar .greeting {
+            color: #495057;
+            font-weight: 500;
+            animation: slideInLeft 0.3s ease;
+        }
+        .topbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .topbar .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #3a6fd8);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: default;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .topbar .user-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(79,140,255,0.4);
+        }
+
+        /* Page content */
+        .page-content {
+            padding: 1.5rem;
+            animation: slideUp 0.35s ease;
+        }
+
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .card:hover {
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+        }
+        .card-header {
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+
+        /* Stat cards */
+        .stat-card {
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.4s ease backwards;
+        }
+        .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stat-card:nth-child(2) { animation-delay: 0.1s; }
+        .stat-card:nth-child(3) { animation-delay: 0.15s; }
+        .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+        .stat-card .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.15;
+            transition: all 0.3s;
+        }
+        .stat-card:hover .stat-icon {
+            opacity: 0.3;
+            transform: scale(1.2) rotate(-5deg);
+        }
+        .stat-card .stat-number {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            transition: all 0.4s;
+        }
+        .stat-card:hover::before {
+            transform: scale(1.3);
+        }
+
+        .bg-gradient-blue { background: linear-gradient(135deg, #4f8cff, #3a6fd8); }
+        .bg-gradient-green { background: linear-gradient(135deg, #2ed573, #1abc54); }
+        .bg-gradient-orange { background: linear-gradient(135deg, #ff9f43, #f0822b); }
+        .bg-gradient-purple { background: linear-gradient(135deg, #a55eea, #8c3fd4); }
+        .bg-gradient-teal { background: linear-gradient(135deg, #45aaf2, #2d8edb); }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+        }
+        .btn:hover::after {
+            transform: translateX(0);
+        }
+        .btn-sm { border-radius: 0.375rem; padding: 0.25rem 0.75rem; }
+        .btn-outline-warning:hover i, .btn-outline-danger:hover i {
+            color: #fff;
+        }
+
+        /* Tables */
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            border-top: none;
+            background: #f8f9fc;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .table td {
+            vertical-align: middle;
+            padding: 0.75rem;
+        }
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+        .table tbody tr:hover {
+            background: rgba(79,140,255,0.03);
+            transform: scale(1.002);
+        }
+        .table tbody tr {
+            animation: slideUp 0.25s ease backwards;
+        }
+        .table tbody tr:nth-child(1) { animation-delay: 0.02s; }
+        .table tbody tr:nth-child(2) { animation-delay: 0.04s; }
+        .table tbody tr:nth-child(3) { animation-delay: 0.06s; }
+        .table tbody tr:nth-child(4) { animation-delay: 0.08s; }
+        .table tbody tr:nth-child(5) { animation-delay: 0.10s; }
+
+        /* Badges */
+        .badge {
+            font-weight: 500;
+            padding: 0.4em 0.75em;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+        .badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Form controls */
+        .form-control, .form-select {
+            border-radius: 0.5rem;
+            border: 1.5px solid #e0e3e8;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.925rem;
+            transition: all 0.2s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79,140,255,0.12);
+            transform: translateY(-1px);
+        }
+        .input-group-text {
+            border-radius: 0.5rem 0 0 0.5rem;
+            border: 1.5px solid #e0e3e8;
+            background: #f8f9fc;
+            color: #6c757d;
+        }
+        .input-group:focus-within .input-group-text {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Loading spinner */
+        .loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+        }
+        .loader-overlay.show {
+            display: flex;
+        }
+        .loader-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e0e3e8;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .loader-spinner-sm {
+            width: 20px;
+            height: 20px;
+            border-width: 2px;
+            display: inline-block;
+        }
+
+        /* Toast container */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 99999;
+        }
+        .toast {
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            animation: slideInRight 0.3s ease;
+        }
+        .toast-success { border-left: 4px solid var(--success); }
+        .toast-error { border-left: 4px solid var(--danger); }
+        .toast-warning { border-left: 4px solid var(--warning); }
+
+        /* Progress bar */
+        .progress {
+            border-radius: 0.5rem;
+            height: 8px;
+            background: #e9ecef;
+        }
+        .progress-bar {
+            border-radius: 0.5rem;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Modal */
+        .modal-content {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+        }
+        .modal-header {
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .modal-footer {
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #868e96;
+            animation: slideUp 0.3s ease;
+        }
+        .empty-state i {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            display: block;
+            color: #d0d4da;
+        }
+        .empty-state h6 {
+            color: #6c757d;
+        }
+
+        /* Delete button in table */
+        .btn-delete-row {
+            opacity: 0.3;
+            transition: all 0.2s;
+        }
+        tr:hover .btn-delete-row {
+            opacity: 1;
+        }
+
+        /* Footer */
+        .footer-meta {
+            color: #adb5bd;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 1.5rem 0 0.5rem;
+            border-top: 1px solid #e9ecef;
+            margin-top: 2rem;
+        }
+
+        /* List group for dashboard */
+        .list-group-item {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        .list-group-item:hover {
+            background: rgba(79,140,255,0.03);
+            border-left-color: var(--primary);
+            padding-left: 1.5rem;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .stat-card .stat-number { font-size: 1.3rem; }
+            .page-content { padding: 1rem; }
+        }
+
+        /* Shimmer loading */
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        /* Select animation */
+        select.form-select {
+            cursor: pointer;
+        }
+
+        /* Counter animation trigger */
+        .counter-animate {
+            animation: countUp 0.5s ease forwards;
+        }
+
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d0d4da; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body class="{% if not user.is_authenticated %}no-auth{% endif %}">
+
+<!-- Loading overlay -->
+<div class="loader-overlay" id="loaderOverlay">
+    <div class="loader-spinner"></div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="wrapper">
+    {% if user.is_authenticated %}
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-briefcase-fill me-2"></i>WorkFlow</h4>
+            <small>Management System</small>
+        </div>
+        <ul class="nav flex-column mt-2">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}" onclick="showLoader()">
+                    <i class="bi bi-speedometer2 me-2"></i>Дашборд
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'employees' in request.path %}active{% endif %}" href="{% url 'employees:list' %}" onclick="showLoader()">
+                    <i class="bi bi-people-fill me-2"></i>Сотрудники
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'tasks' in request.path %}active{% endif %}" href="{% url 'tasks:list' %}" onclick="showLoader()">
+                    <i class="bi bi-list-task me-2"></i>Задачи
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'employees:create' %}" onclick="showLoader()">
+                    <i class="bi bi-person-plus me-2"></i>Добавить сотрудника
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'tasks:create' %}" onclick="showLoader()">
+                    <i class="bi bi-file-earmark-plus me-2"></i>Создать задачу
+                </a>
+            </li>
+            <li class="nav-item mt-3">
+                <a class="nav-link" href="{% url 'logout' %}" style="color: rgba(255,107,107,0.7);">
+                    <i class="bi bi-box-arrow-left me-2"></i>Выход
+                </a>
+            </li>
+        </ul>
+    </aside>
+    {% endif %}
+
+    <div class="main-content">
+        {% if user.is_authenticated %}
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-light btn-sm d-md-none" onclick="document.getElementById('sidebar').classList.toggle('show')">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="greeting"><i class="bi bi-house-door me-1"></i>{% block page_header %}Главная{% endblock %}</span>
+            </div>
+            <div class="user-info">
+                <span class="d-none d-sm-inline text-muted small">{{ user.username }}</span>
+                <div class="user-avatar" title="{{ user.username }}">{{ user.username|first|upper }}</div>
+            </div>
+        </header>
+        {% endif %}
+
+        <div class="page-content">
+            {% block content %}{% endblock %}
+            <div class="footer-meta">
+                <i class="bi bi-briefcase me-1"></i> WorkFlow Management System &copy; {% now "Y" %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:2.5rem;"></i>
+                <h6 class="mt-2 fw-bold">Подтверждение удаления</h6>
+                <p class="small text-muted mb-0" id="deleteModalText">Вы уверены, что хотите удалить?</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pt-0 pb-3">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger btn-sm" id="deleteConfirmBtn">
+                    <i class="bi bi-trash me-1"></i>Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Loading overlay
+    function showLoader() {
+        document.getElementById('loaderOverlay').classList.add('show');
+    }
+    function hideLoader() {
+        document.getElementById('loaderOverlay').classList.remove('show');
+    }
+    window.addEventListener('load', hideLoader);
+    document.addEventListener('DOMContentLoaded', hideLoader);
+
+    // Toast system
+    function showToast(message, type) {
+        type = type || 'success';
+        var icons = {success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill'};
+        var bg = {success: 'toast-success', error: 'toast-error', warning: 'toast-warning'};
+        var toast = document.createElement('div');
+        toast.className = 'toast ' + (bg[type] || '');
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = '<div class="toast-body d-flex align-items-center gap-2 py-2">' +
+            '<i class="bi ' + (icons[type] || icons.success) + '"></i> ' +
+            '<span class="small">' + message + '</span>' +
+            '<button type="button" class="btn-close btn-close-sm ms-auto" data-bs-dismiss="toast"></button>' +
+            '</div>';
+        document.getElementById('toastContainer').appendChild(toast);
+        var bsToast = new bootstrap.Toast(toast, {delay: 3000});
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', function() { toast.remove(); });
+    }
+
+    // Delete confirmation modal
+    var deleteModalEl = document.getElementById('deleteModal');
+    var deleteModal = new bootstrap.Modal(deleteModalEl);
+    var deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+
+    function confirmDelete(text, form) {
+        document.getElementById('deleteModalText').textContent = text || 'Вы уверены?';
+        deleteConfirmBtn.onclick = function() {
+            deleteModal.hide();
+            form.submit();
+        };
+        deleteModal.show();
+        return false;
+    }
+
+    // Animated counter
+    function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'));
+        if (!target) return;
+        var duration = 1000;
+        var start = 0;
+        var step = Math.ceil(target / (duration / 16));
+        var current = start;
+        var timer = setInterval(function() {
+            current += step;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            el.textContent = current;
+        }, 16);
+    }
+    document.querySelectorAll('.counter').forEach(function(el) {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    animateCounter(el);
+                    observer.unobserve(el);
+                }
+            });
+        }, {threshold: 0.5});
+        observer.observe(el);
+    });
+
+    // Auto-hide alerts
+    document.querySelectorAll('.alert-dismissible').forEach(function(el) {
+        setTimeout(function() { el.style.transition = 'opacity 0.3s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 300); }, 4000);
+    });
+</script>
+</body>
+</html>

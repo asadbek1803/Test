@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Сотрудники{% endblock %}
+{% block page_header %}Сотрудники{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+        <div>
+            <i class="bi bi-people-fill me-2 text-primary"></i>
+            <span class="fw-bold">Все сотрудники</span>
+            <span class="badge bg-secondary ms-2">{{ employees|length }}</span>
+        </div>
+        <a href="{% url 'employees:create' %}" class="btn btn-success" onclick="showLoader()">
+            <i class="bi bi-plus-lg"></i> Добавить сотрудника
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Телефон</th>
+                        <th>Email</th>
+                        <th>Должность</th>
+                        <th class="text-end">Зарплата</th>
+                        <th>Дата приема</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td class="fw-medium">
+                            <i class="bi bi-person-circle me-2 text-muted"></i>{{ emp.full_name }}
+                        </td>
+                        <td>
+                            <a href="tel:{{ emp.phone }}" class="text-decoration-none text-dark small">
+                                <i class="bi bi-telephone me-1 text-muted"></i>{{ emp.phone }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="mailto:{{ emp.email }}" class="text-decoration-none small">
+                                <i class="bi bi-envelope me-1 text-muted"></i>{{ emp.email }}
+                            </a>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ emp.position }}</span></td>
+                        <td class="text-end fw-medium">{{ emp.salary }} <small class="text-muted">₽</small></td>
+                        <td class="small">{{ emp.hire_date|date:"d.m.Y" }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'employees:edit' emp.pk %}" class="btn btn-outline-warning btn-sm me-1" title="Редактировать" onclick="showLoader()">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="post" action="{% url 'employees:delete' emp.pk %}" class="d-inline" id="del-{{ emp.pk }}">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-outline-danger btn-sm" title="Удалить"
+                                    onclick="confirmDelete('Удалить сотрудника <b>{{ emp.full_name }}</b>?', document.getElementById('del-{{ emp.pk }}'))">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="bi bi-people"></i>
+                                <h6 class="mt-2">Нет сотрудников</h6>
+                                <p class="text-muted mb-3">Добавьте первого сотрудника, чтобы начать работу</p>
+                                <a href="{% url 'employees:create' %}" class="btn btn-success" onclick="showLoader()">
+                                    <i class="bi bi-plus-lg"></i> Добавить сотрудника
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
